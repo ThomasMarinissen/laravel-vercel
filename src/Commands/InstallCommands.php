@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -30,26 +31,7 @@ class InstallCommands extends Command
     /**
      * @var null|Filesystem
      */
-    private $disk = null;
-
-    /**
-     * @var Repository
-     */
-    private $config;
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct(Repository $config)
-    {
-        // call the parent
-        parent::__construct();
-
-        // set the config repository
-        $this->config = $config;
-    }
+    protected $disk = null;
 
     /**
      * Handle the installation command
@@ -57,7 +39,7 @@ class InstallCommands extends Command
     public function handle(): void
     {
         // get the available versions
-        $versions = $this->config->get('vercel.runtimes');
+        $versions = $this->laravel['config']['vercel.runtimes'];
 
         // get the PHP runtime to install
         $version = $this->choice('What PHP runtime would you like to use?', $versions, '8.0');
@@ -66,8 +48,9 @@ class InstallCommands extends Command
         // load the stub vercel.json stub
         $vercelJsonStub = $this->loadStub('vercel.json');
 
-        // set the correct vercel build
+        // set the correct vercel build and key
         $vercelJsonStub = str_replace('{{ runtime }}', $runtime, $vercelJsonStub);
+        $vercelJsonStub = str_replace('{{ app_key }}', $this->generateKey(), $vercelJsonStub);
 
         // store the vercel.json file
         $this->disk()->put('vercel.json', $vercelJsonStub);
@@ -81,7 +64,7 @@ class InstallCommands extends Command
      *
      * @throws FileNotFoundException
      */
-    private function addStubs(): void
+    protected function addStubs(): void
     {
         // get access to the disk
         $disk = $this->disk();
@@ -101,7 +84,7 @@ class InstallCommands extends Command
      *
      * @return Filesystem               The file system class
      */
-    private function disk(): Filesystem
+    protected function disk(): Filesystem
     {
         // if the disk has been requested before, return it
         if (!is_null($this->disk)) {
@@ -121,9 +104,9 @@ class InstallCommands extends Command
      * @param string            $path The stub to get the path for
      * @return string           The full stub path
      */
-    private function stub(string $path): string
+    protected function stub(string $path): string
     {
-        return $this->config->get('vercel.stubs_path') . $path;
+        return $this->laravel['config']['vercel.stubs_path'] . $path;
     }
 
     /**
@@ -132,8 +115,20 @@ class InstallCommands extends Command
      * @param   string                  $path The stub path
      * @return  string                  The stub content
      */
-    private function loadStub(string $path): string
+    protected function loadStub(string $path): string
     {
         return file_get_contents($this->stub($path));
+    }
+
+    /**
+     * Generate an app key
+     *
+     * @return string               The generated key
+     */
+    protected function generateKey(): string
+    {
+        return 'base64:'.base64_encode(
+            Encrypter::generateKey($this->laravel['config']['app.cipher'])
+        );
     }
 }
