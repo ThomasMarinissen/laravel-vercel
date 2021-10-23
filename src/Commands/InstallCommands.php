@@ -56,11 +56,15 @@ class InstallCommands extends Command
      */
     public function handle(): void
     {
-        // get the PHP runtime to install
-        $runtime = $this->choice('What PHP runtime would you like to use?', $this->config->get('vercel.runtimes'), '8.0');
+        // get the available versions
+        $versions = $this->config->get('vercel.runtimes');
 
-        // load the stub
-        $vercelJsonStub = $this->disk()->get($this->stub('vercel.json'));
+        // get the PHP runtime to install
+        $version = $this->choice('What PHP runtime would you like to use?', $versions, '8.0');
+        $runtime = $versions[$version];
+
+        // load the stub vercel.json stub
+        $vercelJsonStub = $this->loadStub('vercel.json');
 
         // set the correct vercel build
         $vercelJsonStub = str_replace('{{ runtime }}', $runtime, $vercelJsonStub);
@@ -88,8 +92,8 @@ class InstallCommands extends Command
         }
 
         // add the files
-        $disk->put('api/index.php', $disk->get($this->stub('api/index.php')));
-        $disk->put('.vercelignore', $disk->get($this->stub('.vercelignore')));
+        $disk->put('api/index.php', $this->loadStub('api/index.php'));
+        $disk->put('.vercelignore', $this->loadStub('.vercelignore'));
     }
 
     /**
@@ -120,5 +124,16 @@ class InstallCommands extends Command
     private function stub(string $path): string
     {
         return $this->config->get('vercel.stubs_path') . $path;
+    }
+
+    /**
+     * Load the content of a stub
+     *
+     * @param   string                  $path The stub path
+     * @return  string                  The stub content
+     */
+    private function loadStub(string $path): string
+    {
+        return file_get_contents($this->stub($path));
     }
 }
