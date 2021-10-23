@@ -57,7 +57,7 @@ class InstallCommands extends Command
     public function handle(): void
     {
         // get the PHP runtime to install
-        $runtime = $this->choice('What PHP version would you like to use?', $this->config->get('vercel.runtimes'), '8.0');
+        $runtime = $this->choice('What PHP runtime would you like to use?', $this->config->get('vercel.runtimes'), '8.0');
 
         // load the stub
         $vercelJsonStub = $this->disk()->get($this->stub('vercel.json'));
