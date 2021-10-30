@@ -19,7 +19,7 @@ class InstallCommands extends Command
      *
      * @var string
      */
-    public $signature = 'vercel:install {--php-version= : PHP version (supported version 7.4 and 8.0)}';
+    public $signature = 'vercel:install';
 
     /**
      * The command's description.
