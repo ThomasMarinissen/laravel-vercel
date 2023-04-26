@@ -15,7 +15,7 @@ You can install the package via composer:
 $ composer require thomasmarinissen/laravel-vercel
 ```
 
-Make the application reaady to be deployed:
+Make the application ready to be deployed:
 
 ```bash
 $ php artisan vercel:install
